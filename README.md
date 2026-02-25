@@ -22,7 +22,7 @@ composer config repositories.taxonomy_single_redirect vcs https://github.com/fra
 Then, install the module:
 
 ```bash
-composer require YOUR_USERNAME/taxonomy_single_redirect:dev-main
+composer require francoud/taxonomy_single_redirect:dev-main
 ```
 
 ### Manual Installation
@@ -48,3 +48,4 @@ The module hooks into the entity view process and performs a precise query using
 ## License
 
 GPL-2.0-or-later
+
