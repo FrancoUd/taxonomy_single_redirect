@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Primary module hooks for Taxonomy Single Redirect module.
+ * Primary module hooks for Taxonomy Single Redirect module. 1.0.0
  */
 
 use Drupal\Core\Url;
@@ -10,8 +10,6 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Routing\TrustedRedirectResponse;
-// Namespace corretto per EnforcedResponseException (se volessi usarlo)
-use Drupal\Core\Form\EnforcedResponseException;
 
 /**
  * Implements hook_entity_view().
@@ -31,7 +29,7 @@ function taxonomy_single_redirect_entity_view(array &$build, EntityInterface $en
   /** @var \Drupal\taxonomy\TermInterface $entity */
   $term_id = $entity->id();
   
-  // 2. Strict field discovery (Filters out non-taxonomy references to prevent false positives).
+  // 2. Dynamic discovery of reference fields.
   $field_manager = \Drupal::service('entity_field.manager');
   $entity_type_bundle_info = \Drupal::service('entity_type.bundle.info');
   $node_bundles = array_keys($entity_type_bundle_info->getBundleInfo('node'));
@@ -51,7 +49,7 @@ function taxonomy_single_redirect_entity_view(array &$build, EntityInterface $en
     return;
   }
 
-  // 3. Query nodes 
+  // 3. Query for nodes.
   $query = \Drupal::entityTypeManager()->getStorage('node')->getQuery()
     ->condition('status', 1)
     ->accessCheck(TRUE);
@@ -64,26 +62,32 @@ function taxonomy_single_redirect_entity_view(array &$build, EntityInterface $en
   $nids = $query->condition($or_group)->range(0, 2)->execute();
   $nids = array_unique($nids);
 
-  // 4. Cache metadata management.
-  // Add 'node_list' tag to invalidate cache when nodes are created, updated, or deleted
-  $cache_metadata = new CacheableMetadata();
-  $cache_metadata->addCacheableDependency($entity);
-  $cache_metadata->addCacheTags(['node_list']);
-  $cache_metadata->addCacheContexts(['url.path', 'languages:language_interface']);
+  // 4. Build Cache Metadata.
+  // Instead of creating new metadata, we apply tags/contexts directly to the build array
+  // to ensure Drupal merges them with the global system contexts (theme, language, etc.).
+  $build['#cache']['tags'] = array_merge($build['#cache']['tags'] ?? [], ['node_list']);
+  $build['#cache']['tags'] = array_merge($build['#cache']['tags'], $entity->getCacheTags());
+  $build['#cache']['contexts'][] = 'url.path';
 
-  // 5. Verdict and Redirect.
+  // 5. Check for single node and perform redirect via Response object.
   if (count($nids) === 1) {
     $nid = reset($nids);
-    $url = Url::fromRoute('entity.node.canonical', ['node' => $nid])->toString();
+    $url = Url::fromRoute('entity.node.canonical', ['node' => $nid])->setAbsolute()->toString();
     
-    // Use 302 to prevent the browser from caching the redirect permanently.
+    // We use a TrustedRedirectResponse but we don't throw it.
+    // Instead, we let Drupal's render pipeline handle the redirection.
     $response = new TrustedRedirectResponse($url, 302);
-    $response->addCacheableDependency($cache_metadata);
     
-    // Recommended method to cleanly interrupt the rendering flow.
-    throw new EnforcedResponseException($response);
-  }
+    // Attach cacheable metadata to the response so the redirect itself is cached.
+    $cache_metadata = CacheableMetadata::createFromRenderArray($build);
+    $response->addCacheableDependency($cache_metadata);
 
-  // If no redirect is needed, attach cache metadata to the existing build.
-  $cache_metadata->applyTo($build);
+    // For anonymous users and Page Cache compatibility, we set the response.
+    $build['#attached']['http_header'][] = ['Location', $url];
+    
+    // This is the cleanest way to trigger a redirect in hook_entity_view
+    // without breaking the VariationCache contexts.
+    $response->send();
+    exit;
+  }
 }
