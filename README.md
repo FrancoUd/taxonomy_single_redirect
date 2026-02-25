@@ -30,7 +30,19 @@ composer require francoud/taxonomy_single_redirect
 1. Download or clone the repository into your modules/custom/ folder.
 2. Ensure the folder name is exactly taxonomy_single_redirect.
 3. Enable the module via the Drupal admin UI or using Drush:
-   drush en taxonomy_single_redirect
+   'drush en taxonomy_single_redirect'
+
+## Uninstallation
+To completely remove the module and its repository reference from your project, follow these steps:
+
+1. **Uninstall the module** in Drupal (via Admin UI or Drush):
+   `drush pmu taxonomy_single_redirect -y`
+
+2. **Remove the module files** using Composer:
+   `composer remove francoud/taxonomy_single_redirect`
+
+3. **Remove the GitHub repository reference** from your composer.json:
+   `composer config --unset repositories.taxonomy-single-redirect`
 
 ## Configuration
 
