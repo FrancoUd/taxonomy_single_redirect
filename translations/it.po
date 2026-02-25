@@ -1,0 +1,16 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Taxonomy Single Redirect\n"
+"Language: it\n"
+
+msgid "Automatically redirects taxonomy term pages to the related content if only one item is associated."
+msgstr "Reindirizza automaticamente le pagine dei termini di tassonomia al contenuto correlato se è presente un solo elemento associato."
+
+msgid "Enable automatic redirect"
+msgstr "Abilita redirect automatico"
+
+msgid "If checked, users will be redirected to the node if it is the only one tagged with the term."
+msgstr "Se selezionato, gli utenti verranno reindirizzati al nodo se è l'unico taggato con questo termine."
+
+msgid "Taxonomy Single Redirect Settings"
+msgstr "Impostazioni Redirect Tassonomia Singola"
