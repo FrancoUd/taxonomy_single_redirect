@@ -16,12 +16,14 @@ A professional Drupal module that automatically redirects taxonomy term pages to
 Since this module is hosted on GitHub, add the repository to your project's composer.json first:
 
 ```bash
-composer config repositories.taxonomy_single_redirect vcs https://github.com/YOUR_USERNAME/taxonomy_single_redirect
+composer config repositories.taxonomy_single_redirect vcs https://github.com/francoud/taxonomy_single_redirect
+```
 
 Then, install the module:
 
 ```bash
 composer require YOUR_USERNAME/taxonomy_single_redirect:dev-main
+```
 
 ### Manual Installation
 
