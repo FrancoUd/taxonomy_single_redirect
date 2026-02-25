@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * @file
+ * Primary module hooks for Taxonomy Single Redirect module.
+ */
+
+use Drupal\Core\Url;
+use Drupal\taxonomy\TermInterface;
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Routing\TrustedRedirectResponse;
+
+/**
+ * Implements hook_entity_view().
+ */
+function taxonomy_single_redirect_entity_view(array &$build, \Drupal\Core\Entity\EntityInterface $entity, \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display, $view_mode) {
+  
+  // 1. Target only taxonomy terms in 'full' view mode.
+  if ($entity->getEntityTypeId() !== 'taxonomy_term' || $view_mode !== 'full') {
+    return;
+  }
+
+  $config = \Drupal::config('taxonomy_single_redirect.settings');
+  if (!$config->get('enabled')) {
+    return;
+  }
+
+  /** @var \Drupal\taxonomy\TermInterface $entity */
+  $term_id = $entity->id();
+  
+  // 2. Strict field discovery (Filters out non-taxonomy references to prevent false positives).
+  $field_manager = \Drupal::service('entity_field.manager');
+  $entity_type_bundle_info = \Drupal::service('entity_type.bundle.info');
+  
+  $node_bundles = array_keys($entity_type_bundle_info->getBundleInfo('node'));
+  $relevant_fields = [];
+
+  foreach ($node_bundles as $bundle) {
+    $fields = $field_manager->getFieldDefinitions('node', $bundle);
+    foreach ($fields as $field_name => $field_definition) {
+      // CRITICAL FILTER: Only entity_reference fields targeting taxonomy_term.
+      if ($field_definition->getType() === 'entity_reference') {
+        if ($field_definition->getSetting('target_type') === 'taxonomy_term') {
+          $relevant_fields[$field_name] = $field_name;
+        }
+      }
+    }
+  }
+
+  if (empty($relevant_fields)) {
+    return;
+  }
+
+  // 3. Query nodes with .target_id precision.
+  $query = \Drupal::entityTypeManager()->getStorage('node')->getQuery()
+    ->condition('status', 1)
+    ->accessCheck(TRUE);
+
+  $or_group = $query->orConditionGroup();
+  foreach ($relevant_fields as $field_name) {
+    $or_group->condition($field_name . '.target_id', $term_id);
+  }
+
+  $nids = $query->condition($or_group)
+    ->range(0, 2)
+    ->execute();
+
+  $nids = array_unique($nids);
+
+  // 4. Cache metadata management.
+  // Add 'node_list' tag to invalidate cache when nodes are created, updated, or deleted.
+  $cache_metadata = new CacheableMetadata();
+  $cache_metadata->addCacheTags(['node_list']);
+  $cache_metadata->addCacheContexts(['url.path']);
+
+  // 5. Verdict and Redirect.
+  if (count($nids) === 1) {
+    $nid = reset($nids);
+    $url = Url::fromRoute('entity.node.canonical', ['node' => $nid])->toString();
+    
+    // Use 302 to prevent the browser from caching the redirect permanently.
+    $response = new TrustedRedirectResponse($url, 302);
+    $response->addCacheableDependency($cache_metadata);
+    
+    // Send the response and terminate the request properly.
+    $response->send();
+    return;
+  }
+
+  // If there are 0 or multiple nodes, add cache tags to the current page
+  // so Drupal knows to re-evaluate when a node is added or removed.
+  $build['#cache']['tags'][] = 'node_list';
+}

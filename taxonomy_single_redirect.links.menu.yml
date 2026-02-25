@@ -1,0 +1,6 @@
+taxonomy_single_redirect.settings:
+  title: 'Taxonomy Single Redirect'
+  description: 'Configure automatic redirection for terms with a single associated node.'
+  parent: system.admin_config_search
+  route_name: taxonomy_single_redirect.settings
+  weight: 10

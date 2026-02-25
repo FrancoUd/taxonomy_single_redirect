@@ -1,0 +1,7 @@
+taxonomy_single_redirect.settings:
+  path: '/admin/config/search/taxonomy-single-redirect'
+  defaults:
+    _form: '\Drupal\taxonomy_single_redirect\Form\SettingsForm'
+    _title: 'Taxonomy Single Redirect Settings'
+  requirements:
+    _permission: 'administer site configuration'

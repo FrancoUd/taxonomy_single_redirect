@@ -1,0 +1,15 @@
+{
+    "name": "francoud/taxonomy_single_redirect",
+    "description": "Automatically redirects taxonomy term pages to the related node if only one item is associated.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+	 "authors": [
+        {
+            "name": "Francesco Brunetta",
+            "email": "franco.brunetta@gmail.com"
+        }
+    ],
+    "require": {
+        "drupal/core": "^9.4 || ^10 || ^11"
+    }
+}

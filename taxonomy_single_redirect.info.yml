@@ -1,0 +1,8 @@
+name: 'Taxonomy Single Redirect'
+type: module
+description: 'Automatically redirects taxonomy term pages to the related content if only one item is associated.'
+package: Custom
+core_version_requirement: ^9.4 || ^10 || ^11
+configure: taxonomy_single_redirect.settings
+dependencies:
+  - drupal:taxonomy
